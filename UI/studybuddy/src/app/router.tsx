@@ -3,6 +3,9 @@ import Layout from "./layout";
 import { RequireAuth } from "./guard";
 import CreateProfile from "../features/auth/CreateProfile";
 import Login from "../features/auth/Login";
+import CoursesPage from "../features/courses/CoursesPage";
+
+
 
 function Dashboard() {
   return <div className="space-y-2">
@@ -22,6 +25,7 @@ const router = createBrowserRouter([
     ) },
   { path: "/", element: <RequireAuth><Layout><Dashboard/></Layout></RequireAuth> },
   { path: "/dashboard", element: <RequireAuth><Layout><Dashboard/></Layout></RequireAuth> },
+  { path: "/courses", element: <RequireAuth><Layout><CoursesPage/></Layout></RequireAuth> },
 ]);
 
 export default function AppRouter() { return <RouterProvider router={router} />; }
