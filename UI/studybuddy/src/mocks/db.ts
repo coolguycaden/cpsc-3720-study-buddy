@@ -62,6 +62,8 @@ function getOrCreateCourseIn(db: Tables, code: string): Course {
   return c;
 }
 
+
+
 export const DB = {
   reset() {
     save({ users: [], courses: [], enrollments: [], currentUserId: null });
@@ -85,6 +87,19 @@ export const DB = {
     return u;
   },
 
+  addMeetingTime(time: string) {
+    const db = load();
+    const me = assertLoggedIn(db);
+    const user = db.users.find((u) => u.id === me);
+    if (user) {
+      if (!user.availability) {
+        user.availability = [];
+      }
+      user.availability.push(time);
+      save(db);
+    }
+  },
+
   createUser(name: string, username: string): Student {
     const db = load();
     const valid = /^[a-z0-9_.-]{3,20}$/i;
@@ -97,6 +112,7 @@ export const DB = {
       name: name.trim(),
       username: username.trim(),
       createdAt: Date.now(),
+      availability: [],
     };
     db.users.push(user);
     db.currentUserId = user.id;
