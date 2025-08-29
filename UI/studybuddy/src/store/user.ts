@@ -45,6 +45,7 @@ type UserState = {
    * Log out and clear `me`.
    */
   logout: () => void;
+  addMeetingTime: (time: string) => Promise<void>;
 };
 
 /**
@@ -58,6 +59,14 @@ export const useUser = create<UserState>((set) => ({
 
   // Read current user from the DB (localStorage-backed).
   init: () => set({ me: DB.me() }),
+  login: async (username) => { const u = DB.login(username); set({ me: u }); },
+  createProfile: async (name, username) => { const u = DB.createUser(name, username); set({ me: u }); },
+  logout: () => { DB.logout(); set({ me: undefined }); },
+  addMeetingTime: async (time) => {
+    DB.addMeetingTime(time);
+    set({ me: DB.me() });
+  },
+
 
   // Attempt login, then update state.
   login: async (username) => {
