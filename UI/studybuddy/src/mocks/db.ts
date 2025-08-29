@@ -42,7 +42,7 @@ function load(): Tables {
       studySessions: db.studySessions ?? [],
       currentUserId: db.currentUserId ?? null,
     };
-    
+
     // Guardrail: if a course is missing, drop enrollments that point to it.
     const courseIds = new Set(safe.courses.map((c) => c.id));
     safe.enrollments = safe.enrollments.filter((e) => courseIds.has(e.courseId));
@@ -221,6 +221,14 @@ export const DB = {
     const me = db.currentUserId;
     const ids = new Set(db.enrollments.filter((e) => e.courseId === course.id).map((e) => e.studentId));
     return db.users.filter((u) => ids.has(u.id) && u.id !== me);
+  },
+
+  /**
+   * Find a single user by their username (case-insensitive).
+   */
+  getUserByUsername(username: string): Student | undefined {
+    const db = load();
+    return db.users.find((u) => u.username.toLowerCase() === username.toLowerCase());
   },
 
   // --- Study Session Management ---

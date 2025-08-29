@@ -5,6 +5,7 @@ import { RequireAuth } from "./guard";
 import CreateProfile from "../features/auth/CreateProfile";
 import Login from "../features/auth/Login";
 import CoursesPage from "../features/courses/CoursesPage";
+import ProfilePage from "../features/profiles/ProfilePage";
 
 /**
  * Super simple dashboard stub.
@@ -65,6 +66,16 @@ const router = createBrowserRouter([
       <RequireAuth>
         <Layout>
           <CoursesPage />
+        </Layout>
+      </RequireAuth>
+    ),
+  },
+  {
+    path: "/profiles/:username",
+    element: (
+      <RequireAuth>
+        <Layout>
+          <ProfilePage />
         </Layout>
       </RequireAuth>
     ),

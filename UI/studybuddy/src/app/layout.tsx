@@ -30,6 +30,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <NavLink to="/courses" className="hover:underline">
                   Courses
                 </NavLink>
+                {/* Add new link to the user's profile */}
+                <NavLink to={`/profiles/${me.username}`} className="hover:underline">
+                  My Profile
+                </NavLink>
               </>
             )}
           </nav>
