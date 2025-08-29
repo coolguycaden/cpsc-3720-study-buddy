@@ -66,24 +66,4 @@ export const useUser = create<UserState>((set) => ({
     DB.addMeetingTime(time);
     set({ me: DB.me() });
   },
-
-
-  // Attempt login, then update state.
-  login: async (username) => {
-    // DB.login throws if user doesn't exist; let the UI show that message.
-    const u = DB.login(username);
-    set({ me: u });
-  },
-
-  // Create a new user profile (validates format/uniqueness) and set as current.
-  createProfile: async (name, username) => {
-    const u = DB.createUser(name, username);
-    set({ me: u });
-  },
-
-  // Clear current user in DB and in-memory state.
-  logout: () => {
-    DB.logout();
-    set({ me: undefined });
-  },
 }));

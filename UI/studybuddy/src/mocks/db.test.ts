@@ -49,6 +49,30 @@ describe('DB', () => {
     });
   });
 
+  // --- Profile Management ---
+
+  describe('Profile Management', () => {
+    it('should get an existing user by username', () => {
+      const createdUser = DB.createUser('Jane Doe', 'jane_doe');
+      const foundUser = DB.getUserByUsername('jane_doe');
+      expect(foundUser).toBeDefined();
+      expect(foundUser?.id).toBe(createdUser.id);
+      expect(foundUser?.name).toBe('Jane Doe');
+    });
+
+    it('should get a user by username (case-insensitive)', () => {
+      const createdUser = DB.createUser('John Smith', 'JohnSmith');
+      const foundUser = DB.getUserByUsername('johnsmith');
+      expect(foundUser).toBeDefined();
+      expect(foundUser?.id).toBe(createdUser.id);
+    });
+
+    it('should return undefined for a non-existent username', () => {
+      const foundUser = DB.getUserByUsername('non_existent_user');
+      expect(foundUser).toBeUndefined();
+    });
+  });
+
   // --- Courses and Enrollments ---
 
   describe('Courses and Enrollments', () => {
