@@ -2,6 +2,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { DB } from "../../mocks/db";
 import ClassmatesPanel from "./ClassmatesPanel";
+import SetAvaliability from "./SetAvaliability";
+import { useUser } from "../../store/user";
 
 /**
  * Course code format:
@@ -53,6 +55,8 @@ export default function CoursesPage() {
 
   // Increment this to make DBInspector re-pull data from localStorage.
   const [bump, setBump] = useState(0);
+
+  const removeCourse = useUser((s) => s.removeCourse);
 
   /**
    * Read fresh data from the DB:
@@ -106,16 +110,22 @@ export default function CoursesPage() {
     }
   }
 
+  async function handleRemoveCourse(courseCode: string) {
+    try {
+      await removeCourse(courseCode);
+      refresh();
+    } catch (e: any) {
+      setErr(e?.message ?? "Could not remove course");
+    }
+  }
+
   // Handy computed flag to render the empty state.
   const empty = useMemo(() => courses.length === 0, [courses]);
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      {/* Left column: course management */}
       <section>
         <h1 className="text-2xl font-semibold mb-3">My Courses</h1>
-
-        {/* Add-course form */}
         <form onSubmit={addCourse} className="flex gap-2 mb-3">
           <input
             className="flex-1 rounded border px-3 py-2"
@@ -126,36 +136,32 @@ export default function CoursesPage() {
           <button className="rounded bg-black text-white px-3 py-2">Add</button>
         </form>
 
-        {/* Error message (format, not logged in, or duplicate) */}
         {err && <p className="text-sm text-red-600 mb-2">{err}</p>}
 
-        {/* The courses list */}
         <ul className="divide-y rounded border bg-white">
           {empty && <li className="p-3 text-sm text-neutral-500">No courses yet.</li>}
           {courses.map((c) => (
             <li key={c.code} className="flex items-center justify-between p-3">
               <span>{c.code}</span>
-              <button
-                className="text-sm underline"
-                onClick={() => setSelected(c.code)}
-                aria-label={`View classmates for ${c.code}`}
-              >
-                Classmates
-              </button>
+              <div>
+                <button className="text-sm underline mr-2" onClick={() => setSelected(c.code)}>
+                  Classmates
+                </button>
+                <button className="text-sm underline text-red-600" onClick={() => handleRemoveCourse(c.code)}>
+                  Remove
+                </button>
+              </div>
             </li>
           ))}
         </ul>
 
-        {/* Who am I logged in as? (quick sanity check) */}
         <p className="mt-2 text-xs text-neutral-500">
           Logged in as: <strong>{DB.me()?.username ?? "(none)"}</strong>
         </p>
 
-        {/* Collapsible JSON dump of the DB for troubleshooting */}
         <DBInspector bump={bump} />
       </section>
 
-      {/* Right column: classmates for the selected course */}
       <section>
         <h2 className="text-xl font-semibold mb-3">Classmates</h2>
         {selected ? (
@@ -163,6 +169,7 @@ export default function CoursesPage() {
         ) : (
           <p className="text-sm text-neutral-500">Select a course to see classmates.</p>
         )}
+        <SetAvaliability />
       </section>
     </div>
   );

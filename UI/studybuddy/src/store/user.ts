@@ -45,7 +45,21 @@ type UserState = {
    * Log out and clear `me`.
    */
   logout: () => void;
+
+  /**
+   * adds time user is avaliable to their profile
+   */
   addMeetingTime: (time: string) => Promise<void>;
+
+  /**
+   * removes course from user profile
+   */
+  removeCourse: (code: string) => Promise<void>;
+
+  /**
+   * removes user time from profile
+   */
+  removeAvailability: (time: string) => Promise<void>;
 };
 
 /**
@@ -64,6 +78,14 @@ export const useUser = create<UserState>((set) => ({
   logout: () => { DB.logout(); set({ me: undefined }); },
   addMeetingTime: async (time) => {
     DB.addMeetingTime(time);
+    set({ me: DB.me() });
+  },
+  removeCourse: async (code) => {
+    DB.removeEnrollment(code);
+    set({ me: DB.me() });
+  },
+  removeAvailability: async (time) => {
+    DB.removeMeetingTime(time);
     set({ me: DB.me() });
   },
 }));

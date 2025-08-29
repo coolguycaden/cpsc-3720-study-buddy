@@ -11,7 +11,7 @@ const schema = z.object({
 
 export default function AddMeetingTime() {
   // 2. Use a hypothetical store hook to get the function for adding a time
-  const addMeetingTime = useUser(s => s.addMeetingTime);
+  const { addMeetingTime, removeAvailability, me } = useUser();
   
   // 3. Manage the input field state and errors
   const [form, setForm] = useState({ time: "" });
@@ -41,22 +41,51 @@ export default function AddMeetingTime() {
     }
   }
 
+  async function handleRemoveAvailability(time: string) {
+    try {
+      await removeAvailability(time);
+    } catch (e: any) {
+      setErr(e.message ?? "Failed to remove time slot");
+    }
+  }
+
   return (
     <section>
-      <h2 className="text-xl font-semibold mb-2">Add Meeting Time</h2>
+      <h2 className="text-xl font-semibold mb-2">Set Availability</h2>
       <form onSubmit={onSubmit} className="space-y-3">
         <div>
           <label className="block text-sm mb-1">Time Slot</label>
-          <input className="w-full rounded border px-3 py-2"
-                 value={form.time}
-                 onChange={e => setForm(f => ({ ...f, time: e.target.value }))}
-                 placeholder="e.g., Monday 2:00 PM - 3:00 PM"
+          <input
+            className="w-full rounded border px-3 py-2"
+            value={form.time}
+            onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
+            placeholder="e.g., Monday 2:00 PM - 3:00 PM"
           />
           {fieldErr.time && <p className="text-sm text-red-600">{fieldErr.time}</p>}
         </div>
         {err && <p className="text-sm text-red-600">{err}</p>}
         <button className="rounded bg-black text-white px-3 py-2">Add Time</button>
       </form>
+      <div className="mt-4">
+        <h3 className="text-lg font-semibold mb-2">Current Availability</h3>
+        {me?.availability && me.availability.length > 0 ? (
+          <ul className="divide-y rounded border bg-white">
+            {me.availability.map((time, index) => (
+              <li key={index} className="p-3 flex items-center justify-between">
+                <span>{time}</span>
+                <button
+                  className="text-sm underline text-red-600"
+                  onClick={() => handleRemoveAvailability(time)}
+                >
+                  Remove
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-sm text-neutral-500">No availability set.</p>
+        )}
+      </div>
     </section>
   );
 }
