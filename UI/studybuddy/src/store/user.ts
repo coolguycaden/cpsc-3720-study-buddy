@@ -45,7 +45,21 @@ type UserState = {
    * Log out and clear `me`.
    */
   logout: () => void;
+
+  /**
+   * adds time user is avaliable to their profile
+   */
   addMeetingTime: (time: string) => Promise<void>;
+
+  /**
+   * removes course from user profile
+   */
+  removeCourse: (code: string) => Promise<void>;
+
+  /**
+   * removes user time from profile
+   */
+  removeAvailability: (time: string) => Promise<void>;
 };
 
 /**
@@ -66,24 +80,12 @@ export const useUser = create<UserState>((set) => ({
     DB.addMeetingTime(time);
     set({ me: DB.me() });
   },
-
-
-  // Attempt login, then update state.
-  login: async (username) => {
-    // DB.login throws if user doesn't exist; let the UI show that message.
-    const u = DB.login(username);
-    set({ me: u });
+  removeCourse: async (code) => {
+    DB.removeEnrollment(code);
+    set({ me: DB.me() });
   },
-
-  // Create a new user profile (validates format/uniqueness) and set as current.
-  createProfile: async (name, username) => {
-    const u = DB.createUser(name, username);
-    set({ me: u });
-  },
-
-  // Clear current user in DB and in-memory state.
-  logout: () => {
-    DB.logout();
-    set({ me: undefined });
+  removeAvailability: async (time) => {
+    DB.removeMeetingTime(time);
+    set({ me: DB.me() });
   },
 }));

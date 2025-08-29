@@ -146,6 +146,16 @@ export const DB = {
     }
   },
 
+  removeMeetingTime(time: string) {
+    const db = load();
+    const me = assertLoggedIn(db);
+    const user = db.users.find((u) => u.id === me);
+    if (user && user.availability) {
+      user.availability = user.availability.filter((t) => t !== time);
+      save(db);
+    }
+  },
+
   createUser(name: string, username: string): Student {
     const db = load();
     const valid = /^[a-z0-9_.-]{3,20}$/i;
@@ -203,6 +213,18 @@ export const DB = {
     db.enrollments.push({ studentId: me, courseId: course.id, createdAt: Date.now() });
     log("addEnrollment: pushed", { me, course });
     save(db); // single authoritative save with both course + enrollment
+  },
+
+  removeEnrollment(code: string) {
+    const db = load();
+    const me = assertLoggedIn(db);
+    const course = db.courses.find((c) => c.code === normalize(code));
+    if (course) {
+      db.enrollments = db.enrollments.filter(
+        (e) => !(e.studentId === me && e.courseId === course.id)
+      );
+      save(db);
+    }
   },
 
   /**
