@@ -135,13 +135,15 @@ export const DB = {
 
   addMeetingTime(time: string) {
     const db = load();
-    const me = assertLoggedIn(db);
-    const user = db.users.find((u) => u.id === me);
+    const meId = assertLoggedIn(db);
+    const user = db.users.find((u) => u.id === meId);
     if (user) {
       if (!user.availability) {
         user.availability = [];
       }
-      user.availability.push(time);
+      if (!user.availability.includes(time)) {
+        user.availability.push(time);
+      }
       save(db);
     }
   },
