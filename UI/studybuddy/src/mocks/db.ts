@@ -1,5 +1,5 @@
 ﻿// src/mocks/db.ts
-import type { Course, Enrollment, ID, Student, StudySession } from "../types";
+import type { Course, Enrollment, ID, Student, StudySession, StudySessionStatus, EnrichedStudySession } from "../types";
 
 /**
  * Shape of the serialized "database" we keep in localStorage.
@@ -248,12 +248,9 @@ export const DB = {
   createStudySessionRequest(requesteeId: ID, courseId: ID, proposedTime: number): StudySession {
     const db = load();
     const requesterId = assertLoggedIn(db);
-
-    // Prevent sending a request to yourself
     if (requesterId === requesteeId) {
       throw new Error("You cannot send a study request to yourself.");
     }
-
     const newSession: StudySession = {
       id: uuid(),
       requesterId,
@@ -263,11 +260,49 @@ export const DB = {
       status: "pending",
       createdAt: Date.now(),
     };
-
     db.studySessions.push(newSession);
     log("createStudySessionRequest: created", newSession);
     save(db);
     return newSession;
+  },
+
+  // Get all pending requests for the currently logged-in user
+  listPendingRequestsForMe(): EnrichedStudySession[] {
+    const db = load();
+    const me = assertLoggedIn(db);
+
+    const requests = db.studySessions.filter(
+      (s) => s.requesteeId === me && s.status === 'pending'
+    );
+
+    // Enrich the data with requester and course info
+    return requests.map((session) => {
+      const requester = db.users.find((u) => u.id === session.requesterId);
+      const course = db.courses.find((c) => c.id === session.courseId);
+      return {
+        ...session,
+        requesterName: requester?.name ?? 'Unknown User',
+        courseCode: course?.code ?? 'Unknown Course',
+      };
+    });
+  },
+  // Update the status of a specific study session
+  updateStudySessionStatus(sessionId: ID, newStatus: StudySessionStatus): StudySession {
+    const db = load();
+    const me = assertLoggedIn(db);
+    const session = db.studySessions.find((s) => s.id === sessionId);
+
+    if (!session) {
+      throw new Error('Study session not found.');
+    }
+    if (session.requesteeId !== me) {
+      throw new Error('You are not authorized to update this session.');
+    }
+
+    session.status = newStatus;
+    log('updateStudySessionStatus: updated', session);
+    save(db);
+    return session;
   },
 };
 

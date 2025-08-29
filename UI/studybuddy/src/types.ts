@@ -15,7 +15,12 @@ export interface StudySession {
   courseId: ID;
   requesterId: ID;
   requesteeId: ID;
-  proposedTime: number;
+  proposedTime: number; // Unix timestamp
   status: StudySessionStatus;
   createdAt: number;
+}
+
+export interface EnrichedStudySession extends StudySession {
+  requesterName: string;
+  courseCode: string;
 }

@@ -3,13 +3,18 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { DB } from "../../mocks/db";
 import type { Student } from "../../types";
+import { useUser } from "../../store/user";
+import PendingRequestsPanel from "./PendingRequestsPanel"; // Import the new panel
 
 export default function ProfilePage() {
-  // Get the username from the URL, e.g., "/profiles/eli_monroe"
   const { username } = useParams<{ username: string }>();
   const [student, setStudent] = useState<Student | null | undefined>(undefined);
+  const me = useUser((s) => s.me);
 
-  // Fetch the student's data when the component mounts or username changes
+  // Check if the profile being viewed belongs to the logged-in user
+  const isMyProfile = me?.username.toLowerCase() === username?.toLowerCase();
+
+  // Fetch student data
   useEffect(() => {
     if (username) {
       const foundStudent = DB.getUserByUsername(username);
@@ -35,17 +40,20 @@ export default function ProfilePage() {
       
       <hr className="my-6" />
 
-      {/* This is where US04 (Availability) and US07 (Requests) will go */}
+      {/* Conditionally render the pending requests panel */}
+      {isMyProfile && (
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-3">Pending Study Session Requests</h2>
+          <PendingRequestsPanel />
+        </section>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2">
         <section>
           <h2 className="text-xl font-semibold mb-3">Weekly Availability</h2>
           <p className="text-sm text-neutral-500">(Availability will be shown here)</p>
         </section>
-
-        <section>
-          <h2 className="text-xl font-semibold mb-3">Study Session Requests</h2>
-          <p className="text-sm text-neutral-500">(Session requests will be managed here)</p>
-        </section>
+        {/* You could add a section for Confirmed Sessions here later (US08) */}
       </div>
     </div>
   );
