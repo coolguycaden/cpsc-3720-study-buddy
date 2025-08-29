@@ -1,17 +1,19 @@
 ﻿// src/mocks/db.ts
-import type { Course, Enrollment, ID, Student } from "../types";
+import type { Course, Enrollment, ID, Student, StudySession } from "../types";
 
 /**
  * Shape of the serialized "database" we keep in localStorage.
  * - users:      registered users
  * - courses:    unique course records (e.g., { id, code: "CPSC 2150-001" })
  * - enrollments:join table linking users ↔ courses
+ * - studySessions: tracks study session requests between users
  * - currentUserId: who is "logged in" right now
  */
 type Tables = {
   users: Student[];
   courses: Course[];
   enrollments: Enrollment[];
+  studySessions: StudySession[];
   currentUserId: ID | null;
 };
 
@@ -20,6 +22,7 @@ const KEY = "studybuddy_db_v1";
 
 /** Toggle to print DB operations into the dev console for debugging */
 const DEBUG = true;
+
 /** Logger helper used throughout this module */
 const log = (...a: any[]) => DEBUG && console.log("[DB]", ...a);
 
@@ -27,7 +30,7 @@ const log = (...a: any[]) => DEBUG && console.log("[DB]", ...a);
  * Load the DB from localStorage.
  * - Returns a fully-populated Tables object with safe defaults.
  * - Also prunes "orphan" enrollments that reference a missing course
- *   (protects against older broken states).
+ * (protects against older broken states).
  */
 function load(): Tables {
   try {
@@ -36,15 +39,17 @@ function load(): Tables {
       users: db.users ?? [],
       courses: db.courses ?? [],
       enrollments: db.enrollments ?? [],
+      studySessions: db.studySessions ?? [],
       currentUserId: db.currentUserId ?? null,
     };
-    // 🧹 Guardrail: if a course is missing, drop enrollments that point to it.
+    
+    // Guardrail: if a course is missing, drop enrollments that point to it.
     const courseIds = new Set(safe.courses.map((c) => c.id));
     safe.enrollments = safe.enrollments.filter((e) => courseIds.has(e.courseId));
     return safe;
   } catch {
-    // Corrupt JSON or first run → return an empty DB
-    return { users: [], courses: [], enrollments: [], currentUserId: null };
+    // Corrupt JSON or first run -> return an empty DB
+    return { users: [], courses: [], enrollments: [], studySessions: [], currentUserId: null };
   }
 }
 
@@ -92,14 +97,14 @@ function getOrCreateCourseIn(db: Tables, code: string): Course {
 /**
  * Public DB API consumed by the UI layer.
  * Each method:
- *  - loads the current DB snapshot
- *  - mutates it safely
- *  - saves once (save(db)) when finished
+ * - loads the current DB snapshot
+ * - mutates it safely
+ * - saves once (save(db)) when finished
  */
 export const DB = {
   /** Clear everything (useful for demos/tests). */
   reset() {
-    save({ users: [], courses: [], enrollments: [], currentUserId: null });
+    save({ users: [], courses: [], enrollments: [], studySessions: [], currentUserId: null });
   },
 
   /** Return a snapshot of the DB (for debugging / inspector). */
@@ -193,7 +198,7 @@ export const DB = {
 
   /**
    * List courses for the current user:
-   * enrollments (mine) → map courseIds → join to course objects.
+   * enrollments (mine) -> map courseIds -> join to course objects.
    */
   listMyCourses(): Course[] {
     const db = load();
@@ -216,6 +221,36 @@ export const DB = {
     const me = db.currentUserId;
     const ids = new Set(db.enrollments.filter((e) => e.courseId === course.id).map((e) => e.studentId));
     return db.users.filter((u) => ids.has(u.id) && u.id !== me);
+  },
+
+  // --- Study Session Management ---
+
+  /**
+   * Create a study session request.
+   */
+  createStudySessionRequest(requesteeId: ID, courseId: ID, proposedTime: number): StudySession {
+    const db = load();
+    const requesterId = assertLoggedIn(db);
+
+    // Prevent sending a request to yourself
+    if (requesterId === requesteeId) {
+      throw new Error("You cannot send a study request to yourself.");
+    }
+
+    const newSession: StudySession = {
+      id: uuid(),
+      requesterId,
+      requesteeId,
+      courseId,
+      proposedTime,
+      status: "pending",
+      createdAt: Date.now(),
+    };
+
+    db.studySessions.push(newSession);
+    log("createStudySessionRequest: created", newSession);
+    save(db);
+    return newSession;
   },
 };
 
