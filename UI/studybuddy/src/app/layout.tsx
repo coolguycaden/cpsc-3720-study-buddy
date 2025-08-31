@@ -34,6 +34,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <NavLink to={`/profiles/${me.username}`} className="hover:underline">
                   My Profile
                 </NavLink>
+                <NavLink to="/sessions" className="hover:underline">
+                  My Sessions
+                  </NavLink>
               </>
             )}
           </nav>

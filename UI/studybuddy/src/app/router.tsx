@@ -6,6 +6,7 @@ import CreateProfile from "../features/auth/CreateProfile";
 import Login from "../features/auth/Login";
 import CoursesPage from "../features/courses/CoursesPage";
 import ProfilePage from "../features/profiles/ProfilePage";
+import SessionsPage from "../features/sessions/SessionsPage";
 
 /**
  * Super simple dashboard stub.
@@ -79,6 +80,15 @@ const router = createBrowserRouter([
         </Layout>
       </RequireAuth>
     ),
+  },
+  {path: "/sessions", 
+  element: (
+  <RequireAuth>
+    <Layout>
+      <SessionsPage/>
+      </Layout>
+      </RequireAuth>
+  ),
   },
 ]);
 

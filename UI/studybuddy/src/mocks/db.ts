@@ -1,5 +1,5 @@
 ﻿// src/mocks/db.ts
-import type { Course, Enrollment, ID, Student, StudySession, StudySessionStatus, EnrichedStudySession } from "../types";
+import type { Course, Enrollment, ID, Student, StudySession, StudySessionStatus, DetailedStudySession } from "../types";
 
 /**
  * Shape of the serialized "database" we keep in localStorage.
@@ -267,7 +267,7 @@ export const DB = {
   /**
    * Create a study session request.
    */
-  createStudySessionRequest(requesteeId: ID, courseId: ID, proposedTime: number): StudySession {
+  createStudySessionRequest(requesteeId: ID, courseId: ID, time: number): StudySession {
     const db = load();
     const requesterId = assertLoggedIn(db);
     if (requesterId === requesteeId) {
@@ -278,7 +278,7 @@ export const DB = {
       requesterId,
       requesteeId,
       courseId,
-      proposedTime,
+      time,
       status: "pending",
       createdAt: Date.now(),
     };
@@ -289,7 +289,7 @@ export const DB = {
   },
 
   // Get all pending requests for the currently logged-in user
-  listPendingRequestsForMe(): EnrichedStudySession[] {
+  listPendingRequestsForMe(): DetailedStudySession[] {
     const db = load();
     const me = assertLoggedIn(db);
 
@@ -300,11 +300,18 @@ export const DB = {
     // Enrich the data with requester and course info
     return requests.map((session) => {
       const requester = db.users.find((u) => u.id === session.requesterId);
+      const requestee = db.users.find((u) => u.id === session.requesteeId);
       const course = db.courses.find((c) => c.id === session.courseId);
+
+      const participants: { id: ID; name: string; username: string }[] = [];
+      if (requester) participants.push(requester);
+      if (requestee) participants.push(requestee);
+
       return {
-        ...session,
-        requesterName: requester?.name ?? 'Unknown User',
+        id: session.id,
         courseCode: course?.code ?? 'Unknown Course',
+        time: new Date(session.time).toLocaleString(),
+        participants: participants.map(p => ({ id: p.id, name: p.name, username: p.username })),
       };
     });
   },
@@ -326,8 +333,36 @@ export const DB = {
     save(db);
     return session;
   },
-};
 
+  listMyStudySessions(): DetailedStudySession[] {
+    const db = load();
+    const me = db.currentUserId;
+    if (!me) return [];
+
+    const mySessions = db.studySessions.filter(
+      (s) => s.requesterId === me || s.requesteeId.includes(me)
+    );
+
+    return mySessions.map((session) => {
+      const course = db.courses.find((c) => c.id === session.courseId);
+      const requester = db.users.find((u) => u.id === session.requesterId);
+      const requestee = db.users.find((u) => u.id === session.requesteeId);
+      
+      const participants = [requester, requestee].filter(Boolean) as Student[];
+
+      return {
+        id: session.id,
+        courseCode: course?.code ?? "Unknown Course",
+        time: new Date(session.time).toLocaleString([], { dateStyle: 'full', timeStyle: 'short' }),
+        participants: participants.map((p) => ({
+          id: p.id,
+          name: p.name,
+          username: p.username,
+        })),
+      };
+    });
+  }
+};
 // expose for DevTools: window.__DB (handy for testing from the console)
 declare global {
   interface Window {

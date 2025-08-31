@@ -150,7 +150,7 @@ describe('DB', () => {
       expect(session.requesteeId).toBe(requestee.id);
       expect(session.courseId).toBe(course.id);
       expect(session.status).toBe('pending');
-      expect(session.proposedTime).toBe(proposedTime);
+      expect(session.time).toBe(proposedTime);
 
       const dbState = DB.dump();
       expect(dbState.studySessions.length).toBe(1);
