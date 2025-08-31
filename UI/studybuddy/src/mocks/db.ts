@@ -378,6 +378,20 @@ export const DB = {
     return db.courses.filter((c) => courseIds.has(c.id));
   },
 
+  /**
+   * List mutual courses between the current user and another student.
+   */
+  listMutualCourses(otherStudentId: ID): Course[] {
+    const db = load();
+    const meId = assertLoggedIn(db);
+
+    const myCourses = this.listMyCoursesByStudentId(meId);
+    const theirCourses = this.listMyCoursesByStudentId(otherStudentId);
+
+    const myCourseIds = new Set(myCourses.map(c => c.id));
+    return theirCourses.filter(c => myCourseIds.has(c.id));
+  },
+
   getCourseByCode(code: string): Course | undefined {
     const db = load();
     return db.courses.find(c => c.code === normalize(code));

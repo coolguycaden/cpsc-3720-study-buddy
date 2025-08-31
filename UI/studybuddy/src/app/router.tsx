@@ -8,6 +8,7 @@ import CoursesPage from "../features/courses/CoursesPage";
 import ProfilePage from "../features/profiles/ProfilePage";
 import SessionsPage from "../features/sessions/SessionsPage";
 import StudyBuddySuggestions from "../features/profiles/StudyBuddySuggestions";
+import ConfirmedSessionsPanel from "../features/dashboard/ConfirmedSessionsPanel";
 
 /**
  * Super simple dashboard stub.
@@ -15,12 +16,15 @@ import StudyBuddySuggestions from "../features/profiles/StudyBuddySuggestions";
  */
 function Dashboard() {
   return (
-    <div className="space-y-2">
+    <div className="space-y-8">
       <div>
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-      <p>Welcome. Next you will add courses and find classmates.</p>
-    </div>
-    <StudyBuddySuggestions />
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p>Welcome. Manage your study sessions and find new partners.</p>
+      </div>
+      <div className="grid md:grid-cols-2 gap-8 items-start">
+        <ConfirmedSessionsPanel />
+        <StudyBuddySuggestions />
+      </div>
     </div>
   );
 }

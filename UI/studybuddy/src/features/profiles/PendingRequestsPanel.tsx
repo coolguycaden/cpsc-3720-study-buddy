@@ -77,7 +77,6 @@ export default function PendingRequestsPanel() {
     <div>
       <ul className="divide-y rounded border bg-white">
         {requests.map((req) => {
-          // FIX: Infer the requester. It's the participant who is not the current user.
           const requester = req.participants.find(p => p.id !== me?.id);
 
           return (

@@ -113,58 +113,78 @@ describe('DB', () => {
   // --- Availability Management ---
   describe('Availability Management', () => {
     beforeEach(() => {
-      DB.createUser('Available User', 'available_user');
-      DB.login('available_user');
+        DB.createUser('Available User', 'available_user');
+        DB.login('available_user');
     });
 
     it('should add a meeting time to the user profile', () => {
-      const time = 'Monday 10am-11am';
-      DB.addMeetingTime(time);
-      const user = DB.me();
-      expect(user?.availability).toBeDefined();
-      expect(user?.availability).toContain(time);
+        DB.addMeetingTime("Monday", "10:00", "11:00");
+        const user = DB.me();
+        expect(user?.availability).toBeDefined();
+        expect(user?.availability?.[0]).toEqual({ day: "Monday", startTime: "10:00", endTime: "11:00" });
     });
 
     it('should not add a duplicate meeting time', () => {
-      const time = 'Wednesday 5pm-6pm';
-      DB.addMeetingTime(time);
-      DB.addMeetingTime(time); // Add again
-      const user = DB.me();
-      expect(user?.availability).toHaveLength(1);
+        DB.addMeetingTime("Wednesday", "17:00", "18:00");
+        DB.addMeetingTime("Wednesday", "17:00", "18:00"); // Add again
+        const user = DB.me();
+        expect(user?.availability).toHaveLength(1);
     });
 
     it('should remove a meeting time from the user profile', () => {
-      const time1 = 'Friday 1pm-2pm';
-      const time2 = 'Tuesday 9am-10am';
-      DB.addMeetingTime(time1);
-      DB.addMeetingTime(time2);
-      
-      DB.removeMeetingTime(time1);
+        const time1 = { day: "Friday", startTime: "13:00", endTime: "14:00" };
+        const time2 = { day: "Tuesday", startTime: "09:00", endTime: "10:00" };
+        DB.addMeetingTime(time1.day, time1.startTime, time1.endTime);
+        DB.addMeetingTime(time2.day, time2.startTime, time2.endTime);
+        
+        DB.removeMeetingTime(time1);
 
-      const user = DB.me();
-      expect(user?.availability).toHaveLength(1);
-      expect(user?.availability).not.toContain(time1);
-      expect(user?.availability).toContain(time2);
+        const user = DB.me();
+        expect(user?.availability).toHaveLength(1);
+        expect(user?.availability).not.toContainEqual(time1);
+        expect(user?.availability).toContainEqual(time2);
     });
 
     it('should do nothing when trying to remove a non-existent time slot', () => {
-      const time = 'Thursday 3pm-4pm';
-      DB.addMeetingTime(time);
-      DB.removeMeetingTime('non-existent-time');
-      const user = DB.me();
-      expect(user?.availability).toHaveLength(1);
+        const time = { day: "Thursday", startTime: "15:00", endTime: "16:00" };
+        DB.addMeetingTime(time.day, time.startTime, time.endTime);
+        DB.removeMeetingTime({ day: "non", startTime: "existent", endTime: "time" });
+        const user = DB.me();
+        expect(user?.availability).toHaveLength(1);
     });
   });
 
   // --- Study Session Management ---
   describe('Study Sessions', () => {
     let requester: Student, requestee: Student, course: Course;
+    let mutualCourse: Course, requesterOnlyCourse: Course;
     
     beforeEach(() => {
-      requester = DB.createUser('Requester', 'requester');
-      requestee = DB.createUser('Requestee', 'requestee');
-      course = DB.getOrCreateCourse('MATH 2060-002');
-      DB.login('requester');
+        requester = DB.createUser('Requester', 'requester');
+        requestee = DB.createUser('Requestee', 'requestee');
+        
+        // Login as requester to add courses
+        DB.login('requester');
+        mutualCourse = DB.getOrCreateCourse('MATH-101');
+        requesterOnlyCourse = DB.getOrCreateCourse('HIST-202');
+        DB.addEnrollment(mutualCourse.code);
+        DB.addEnrollment(requesterOnlyCourse.code);
+        DB.logout();
+        
+        // Login as requestee to add courses
+        DB.login('requestee');
+        DB.addEnrollment(mutualCourse.code);
+        DB.logout();
+        
+        // Login back as requester for tests
+        DB.login('requester');
+        course = mutualCourse; // for existing tests
+    });
+
+    it('should list mutual courses between two students', () => {
+        const mutual = DB.listMutualCourses(requestee.id);
+        expect(mutual).toHaveLength(1);
+        expect(mutual[0].code).toBe(mutualCourse.code);
     });
 
     it('should create a study session request', () => {
@@ -204,4 +224,3 @@ describe('DB', () => {
     });
   });
 });
-
