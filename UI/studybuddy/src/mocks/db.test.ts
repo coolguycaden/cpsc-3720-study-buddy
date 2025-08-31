@@ -223,4 +223,52 @@ describe('DB', () => {
         .toThrow('You are not authorized to update this session.');
     });
   });
+  describe('Study Buddy Suggestions', () => {
+    let me: Student, buddy: Student, nonBuddy: Student;
+    
+    beforeEach(() => {
+      me = DB.createUser('Meme', 'meme');
+      buddy = DB.createUser('Buddy', 'buddy');
+      nonBuddy = DB.createUser('NonBuddy', 'non_buddy');
+
+      DB.login('meme');
+      DB.addEnrollment('CPSC 101-001');
+      DB.addEnrollment('CPSC 102-001');
+      DB.addMeetingTime('Monday', '10:00', '12:00');
+      DB.logout();
+      
+      DB.login('buddy');
+      DB.addEnrollment('CPSC 101-001');
+      DB.addEnrollment('CPSC 102-001');
+      DB.addMeetingTime('Monday', '11:00', '13:00'); // Overlapping course and time
+      DB.logout();
+      
+      DB.login('non_buddy');
+      DB.addEnrollment('CPSC 101-001');
+      DB.addMeetingTime('Tuesday', '10:00', '12:00'); // Course overlap, but no time overlap
+      DB.logout();
+    });
+
+    it('should suggest a buddy with mutual courses and overlapping availability', () => {
+      DB.login('meme');
+      const suggestions = DB.suggestStudyBuddies();
+      expect(suggestions.map(s => s.id)).toContain(buddy.id);
+    });
+
+    it('should NOT suggest a buddy if there is no overlapping availability', () => {
+      DB.login('meme');
+      const suggestions = DB.suggestStudyBuddies();
+      expect(suggestions.map(s => s.id)).not.toContain(nonBuddy.id);
+    });
+
+    it('should NOT suggest a buddy if there are no mutual courses', () => {
+      DB.login('non_buddy');
+      DB.addEnrollment('ENGL-202'); // Add a different course
+      DB.logout();
+
+      DB.login('meme');
+      const suggestions = DB.suggestStudyBuddies();
+      expect(suggestions.map(s => s.id)).not.toContain(nonBuddy.id);
+    });
+  });
 });

@@ -409,34 +409,34 @@ export const DB = {
     const potentialBuddies = db.users.filter(user => {
       if (user.id === meId) return false;
 
-      // Check for mutual courses
+      // Condition 1: Must have at least one mutual course.
       const theirCourses = new Set(this.listMyCoursesByStudentId(user.id).map(c => c.id));
       const mutualCourses = [...myCourses].filter(courseId => theirCourses.has(courseId));
       if (mutualCourses.length === 0) return false;
 
-      // Check for overlapping availability
+      // Condition 2: Must have overlapping availability.
       const theirAvailability = user.availability ?? [];
       for (const mySlot of myAvailability) {
         for (const theirSlot of theirAvailability) {
           if (mySlot.day === theirSlot.day) {
-            // Simple time conversion to minutes for comparison
             const myStart = parseInt(mySlot.startTime.replace(':', ''));
             const myEnd = parseInt(mySlot.endTime.replace(':', ''));
             const theirStart = parseInt(theirSlot.startTime.replace(':', ''));
             const theirEnd = parseInt(theirSlot.endTime.replace(':', ''));
 
             if (Math.max(myStart, theirStart) < Math.min(myEnd, theirEnd)) {
-              return true; // Found an overlap
+              return true; // Found an overlap, this is a match.
             }
           }
         }
       }
       
-      return false; // No overlap found
+      return false; // No overlap found.
     });
 
     return potentialBuddies;
   },
+
 };
 // expose for DevTools: window.__DB (handy for testing from the console)
 declare global {
