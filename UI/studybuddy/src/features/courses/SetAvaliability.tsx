@@ -1,49 +1,44 @@
 import { useState } from "react";
-import { z } from "zod";
 // Assume a state management hook similar to useUser
 // This hook provides access to student data and a function to update it
 import { useUser } from "../../store/user";
+import type { Availability } from "../../types";
 
 // 1. Define the Zod schema for the meeting time string
-const schema = z.object({
-  time: z.string().min(3, "A time slot is required"),
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const times = Array.from({ length: 24 * 2 }, (_, i) => {
+  const hour = Math.floor(i / 2);
+  const minute = i % 2 === 0 ? '00' : '30';
+  return `${hour.toString().padStart(2, '0')}:${minute}`;
 });
 
-export default function AddMeetingTime() {
-  // 2. Use a hypothetical store hook to get the function for adding a time
+export default function SetAvaliability() {
   const { addMeetingTime, removeAvailability, me } = useUser();
   
-  // 3. Manage the input field state and errors
-  const [form, setForm] = useState({ time: "" });
+  const [day, setDay] = useState(days[0]);
+  const [startTime, setStartTime] = useState("09:00");
+  const [endTime, setEndTime] = useState("10:00");
   const [err, setErr] = useState<string | null>(null);
-  const [fieldErr, setFieldErr] = useState<{ time?: string }>({});
 
-  // 4. Handle form submission
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setErr(null); 
-    setFieldErr({});
+    setErr(null);
 
-    const parsed = schema.safeParse(form);
-    if (!parsed.success) {
-      const fe: any = {};
-      parsed.error.issues.forEach(i => { fe[i.path[0]] = i.message; });
-      setFieldErr(fe); 
+    if (startTime >= endTime) {
+      setErr("End time must be after start time.");
       return;
     }
 
     try {
-      // 5. Call the function from the store to add the time
-      await addMeetingTime(form.time.trim());
-      setForm({ time: "" }); // Clear the form on success
+      await addMeetingTime(day, startTime, endTime);
     } catch (e: any) {
       setErr(e.message ?? "Failed to add time slot");
     }
   }
 
-  async function handleRemoveAvailability(time: string) {
+  async function handleRemoveAvailability(availability: Availability) {
     try {
-      await removeAvailability(time);
+      await removeAvailability(availability);
     } catch (e: any) {
       setErr(e.message ?? "Failed to remove time slot");
     }
@@ -52,30 +47,40 @@ export default function AddMeetingTime() {
   return (
     <section>
       <h2 className="text-xl font-semibold mb-2">Set Availability</h2>
-      <form onSubmit={onSubmit} className="space-y-3">
-        <div>
-          <label className="block text-sm mb-1">Time Slot</label>
-          <input
-            className="w-full rounded border px-3 py-2"
-            value={form.time}
-            onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-            placeholder="e.g., Monday 2:00 PM - 3:00 PM"
-          />
-          {fieldErr.time && <p className="text-sm text-red-600">{fieldErr.time}</p>}
+      <form onSubmit={onSubmit} className="space-y-4 p-4 border rounded-lg bg-gray-50">
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm mb-1 font-medium">Day</label>
+            <select value={day} onChange={e => setDay(e.target.value)} className="w-full rounded border px-3 py-2">
+              {days.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm mb-1 font-medium">Start Time</label>
+            <select value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full rounded border px-3 py-2">
+              {times.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm mb-1 font-medium">End Time</label>
+            <select value={endTime} onChange={e => setEndTime(e.target.value)} className="w-full rounded border px-3 py-2">
+              {times.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
         </div>
         {err && <p className="text-sm text-red-600">{err}</p>}
-        <button className="rounded bg-black text-white px-3 py-2">Add Time</button>
+        <button className="rounded bg-black text-white px-4 py-2">Add Time</button>
       </form>
       <div className="mt-4">
         <h3 className="text-lg font-semibold mb-2">Current Availability</h3>
         {me?.availability && me.availability.length > 0 ? (
           <ul className="divide-y rounded border bg-white">
-            {me.availability.map((time, index) => (
+            {me.availability.map((avail, index) => (
               <li key={index} className="p-3 flex items-center justify-between">
-                <span>{time}</span>
+                <span>{`${avail.day}, ${avail.startTime} - ${avail.endTime}`}</span>
                 <button
                   className="text-sm underline text-red-600"
-                  onClick={() => handleRemoveAvailability(time)}
+                  onClick={() => handleRemoveAvailability(avail)}
                 >
                   Remove
                 </button>

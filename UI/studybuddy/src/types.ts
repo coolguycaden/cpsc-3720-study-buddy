@@ -1,13 +1,12 @@
 ﻿// src/types.ts
 
 export type ID = string;
-export type Weekday = 0|1|2|3|4|5|6;
 export interface Student { 
   id: ID; 
   name: string; 
   username: string; 
   createdAt: number; 
-  availability?: string[]; 
+  availability?: Availability[]; 
 }
 export interface Course { id: ID; code: string; title?: string; }
 export interface Enrollment { studentId: ID; courseId: ID; createdAt: number; }
@@ -32,3 +31,8 @@ export interface DetailedStudySession {
     participants: { id: ID; name: string; username: string }[];
 }
 
+export interface Availability {
+  day: string;
+  startTime: string;
+  endTime: string;
+}

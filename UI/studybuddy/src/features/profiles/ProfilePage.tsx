@@ -48,12 +48,22 @@ export default function ProfilePage() {
         </section>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2">
+<div className="grid gap-6 md:grid-cols-2">
         <section>
           <h2 className="text-xl font-semibold mb-3">Weekly Availability</h2>
-          <p className="text-sm text-neutral-500">(Availability will be shown here)</p>
+          {student.availability && student.availability.length > 0 ? (
+            <ul className="divide-y rounded border bg-white">
+              {student.availability.map((avail, index) => (
+                <li key={index} className="p-3">
+                  <span className="font-medium">{avail.day}:</span>
+                  <span className="text-neutral-700 ml-2">{`${avail.startTime} - ${avail.endTime}`}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-neutral-500">No availability set.</p>
+          )}
         </section>
-        {/* You could add a section for Confirmed Sessions here later (US08) */}
       </div>
     </div>
   );

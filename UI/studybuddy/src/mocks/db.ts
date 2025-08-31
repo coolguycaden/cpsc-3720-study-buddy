@@ -1,5 +1,5 @@
 ﻿// src/mocks/db.ts
-import type { Course, Enrollment, ID, Student, StudySession, StudySessionStatus, DetailedStudySession } from "../types";
+import type { Course, Enrollment, ID, Student, StudySession, StudySessionStatus, DetailedStudySession, Availability } from "../types";
 
 /**
  * Shape of the serialized "database" we keep in localStorage.
@@ -133,7 +133,7 @@ export const DB = {
     return u;
   },
 
-  addMeetingTime(time: string) {
+  addMeetingTime(day: string, startTime: string, endTime: string) {
     const db = load();
     const meId = assertLoggedIn(db);
     const user = db.users.find((u) => u.id === meId);
@@ -141,19 +141,26 @@ export const DB = {
       if (!user.availability) {
         user.availability = [];
       }
-      if (!user.availability.includes(time)) {
-        user.availability.push(time);
+      const newAvailability: Availability = { day, startTime, endTime };
+      // Prevent adding duplicate entries
+      const exists = user.availability.some(
+        a => a.day === day && a.startTime === startTime && a.endTime === endTime
+      );
+      if (!exists) {
+        user.availability.push(newAvailability);
       }
       save(db);
     }
   },
 
-  removeMeetingTime(time: string) {
+  removeMeetingTime(availabilityToRemove: Availability) {
     const db = load();
     const me = assertLoggedIn(db);
     const user = db.users.find((u) => u.id === me);
     if (user && user.availability) {
-      user.availability = user.availability.filter((t) => t !== time);
+      user.availability = user.availability.filter(
+        a => a.day !== availabilityToRemove.day || a.startTime !== availabilityToRemove.startTime || a.endTime !== availabilityToRemove.endTime
+      );
       save(db);
     }
   },
@@ -378,18 +385,44 @@ export const DB = {
 
   suggestStudyBuddies(): Student[] {
     const db = load();
-    const me = assertLoggedIn(db);
+    const meId = assertLoggedIn(db);
+    const me = db.users.find(u => u.id === meId);
+    if (!me) return [];
+
     const myCourses = new Set(this.listMyCourses().map(c => c.id));
-    
+    const myAvailability = me.availability ?? [];
+
     const potentialBuddies = db.users.filter(user => {
-      if (user.id === me) return false;
+      if (user.id === meId) return false;
+
+      // Check for mutual courses
       const theirCourses = new Set(this.listMyCoursesByStudentId(user.id).map(c => c.id));
       const mutualCourses = [...myCourses].filter(courseId => theirCourses.has(courseId));
-      return mutualCourses.length >= 2;
+      if (mutualCourses.length === 0) return false;
+
+      // Check for overlapping availability
+      const theirAvailability = user.availability ?? [];
+      for (const mySlot of myAvailability) {
+        for (const theirSlot of theirAvailability) {
+          if (mySlot.day === theirSlot.day) {
+            // Simple time conversion to minutes for comparison
+            const myStart = parseInt(mySlot.startTime.replace(':', ''));
+            const myEnd = parseInt(mySlot.endTime.replace(':', ''));
+            const theirStart = parseInt(theirSlot.startTime.replace(':', ''));
+            const theirEnd = parseInt(theirSlot.endTime.replace(':', ''));
+
+            if (Math.max(myStart, theirStart) < Math.min(myEnd, theirEnd)) {
+              return true; // Found an overlap
+            }
+          }
+        }
+      }
+      
+      return false; // No overlap found
     });
 
     return potentialBuddies;
-  }
+  },
 };
 // expose for DevTools: window.__DB (handy for testing from the console)
 declare global {

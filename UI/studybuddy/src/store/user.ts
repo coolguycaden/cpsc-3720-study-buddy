@@ -1,6 +1,6 @@
 ﻿// src/store/user.ts
 import { create } from "zustand";
-import type { Student } from "../types";
+import type { Student, Availability } from "../types";
 import { DB } from "../mocks/db";
 
 /**
@@ -49,7 +49,7 @@ type UserState = {
   /**
    * adds time user is avaliable to their profile
    */
-  addMeetingTime: (time: string) => Promise<void>;
+  addMeetingTime: (day: string, startTime: string, endTime: string) => Promise<void>;
 
   /**
    * removes course from user profile
@@ -59,7 +59,7 @@ type UserState = {
   /**
    * removes user time from profile
    */
-  removeAvailability: (time: string) => Promise<void>;
+  removeAvailability: (availability: Availability) => Promise<void>;
 };
 
 /**
@@ -76,8 +76,8 @@ export const useUser = create<UserState>((set) => ({
   login: async (username) => { const u = DB.login(username); set({ me: u }); },
   createProfile: async (name, username) => { const u = DB.createUser(name, username); set({ me: u }); },
   logout: () => { DB.logout(); set({ me: undefined }); },
-  addMeetingTime: async (time) => {
-    DB.addMeetingTime(time);
+  addMeetingTime: async (day, startTime, endTime) => {
+    DB.addMeetingTime(day, startTime, endTime);
     set({ me: DB.me() });
   },
   removeCourse: async (code) => {
