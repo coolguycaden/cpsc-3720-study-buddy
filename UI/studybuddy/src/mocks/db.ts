@@ -342,7 +342,7 @@ export const DB = {
     if (!me) return [];
 
     const mySessions = db.studySessions.filter(
-      (s) => s.requesterId === me || s.requesteeId.includes(me)
+      (s) => s.status === 'confirmed' && (s.requesterId === me || s.requesteeId === me)
     );
 
     return mySessions.map((session) => {
@@ -363,6 +363,32 @@ export const DB = {
         })),
       };
     });
+  },
+
+  listMyCoursesByStudentId(studentId: ID): Course[] {
+    const db = load();
+    const courseIds = new Set(db.enrollments.filter((e) => e.studentId === studentId).map((e) => e.courseId));
+    return db.courses.filter((c) => courseIds.has(c.id));
+  },
+
+  getCourseByCode(code: string): Course | undefined {
+    const db = load();
+    return db.courses.find(c => c.code === normalize(code));
+  },
+
+  suggestStudyBuddies(): Student[] {
+    const db = load();
+    const me = assertLoggedIn(db);
+    const myCourses = new Set(this.listMyCourses().map(c => c.id));
+    
+    const potentialBuddies = db.users.filter(user => {
+      if (user.id === me) return false;
+      const theirCourses = new Set(this.listMyCoursesByStudentId(user.id).map(c => c.id));
+      const mutualCourses = [...myCourses].filter(courseId => theirCourses.has(courseId));
+      return mutualCourses.length >= 2;
+    });
+
+    return potentialBuddies;
   }
 };
 // expose for DevTools: window.__DB (handy for testing from the console)

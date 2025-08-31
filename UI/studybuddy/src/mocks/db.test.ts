@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { DB } from './db';
-import type { Student, Course, StudySession } from '../types';
+import type { Student, Course} from '../types';
 
 // Test suite for the mock database
 describe('DB', () => {
@@ -182,7 +182,8 @@ describe('DB', () => {
 
       const pendingRequests = DB.listPendingRequestsForMe();
       expect(pendingRequests).toHaveLength(1);
-      expect(pendingRequests[0].requesterName).toBe('Requester');
+      const requesterInParticipants = pendingRequests[0].participants.find(p => p.id === requester.id);
+      expect(requesterInParticipants?.name).toBe('Requester');
     });
 
     it('should update the status of a study session', () => {

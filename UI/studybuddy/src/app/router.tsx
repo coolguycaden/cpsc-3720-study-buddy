@@ -7,6 +7,7 @@ import Login from "../features/auth/Login";
 import CoursesPage from "../features/courses/CoursesPage";
 import ProfilePage from "../features/profiles/ProfilePage";
 import SessionsPage from "../features/sessions/SessionsPage";
+import StudyBuddySuggestions from "../features/profiles/StudyBuddySuggestions";
 
 /**
  * Super simple dashboard stub.
@@ -15,8 +16,11 @@ import SessionsPage from "../features/sessions/SessionsPage";
 function Dashboard() {
   return (
     <div className="space-y-2">
+      <div>
       <h1 className="text-2xl font-semibold">Dashboard</h1>
       <p>Welcome. Next you will add courses and find classmates.</p>
+    </div>
+    <StudyBuddySuggestions />
     </div>
   );
 }
